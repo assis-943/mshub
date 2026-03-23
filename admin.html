@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SISTEMA DE CONTROLO - MS HUB</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+</head>
+<body class="bg-black text-white font-sans p-4">
+    <header class="max-w-7xl mx-auto mb-8 border-b border-slate-800 pb-6 flex flex-col md:flex-row justify-between items-center gap-6">
+        <div>
+            <h1 class="text-2xl font-black text-blue-500 italic uppercase">MS HUB <span class="text-white font-light text-sm italic">Painel de Gestão</span></h1>
+            <p id="total-stats" class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1 italic">Conectando ao Firebase...</p>
+        </div>
+        <div class="relative w-full md:w-96">
+            <input type="number" id="search-input" oninput="painelPrincipal()" placeholder="Pesquisar por Telefone..." 
+                   class="w-full bg-slate-900 border border-slate-700 rounded-2xl py-3 px-12 text-sm focus:border-blue-500 outline-none shadow-2xl">
+            <i class="fas fa-search absolute left-5 top-4 text-slate-600"></i>
+        </div>
+    </header>
+    <main class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="lg:col-span-2 space-y-6">
+            <h2 class="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                <i class="fas fa-user-shield"></i> Controlo de Contas & Equipa
+            </h2>
+            <div id="user-list" class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[75vh] overflow-y-auto pr-2"></div>
+        </div>
+        <div class="space-y-8">
+            <section class="bg-slate-900/40 p-6 rounded-3xl border border-slate-800 shadow-xl">
+                <h2 class="text-xs font-black text-orange-500 uppercase mb-4 italic"><i class="fas fa-file-invoice-dollar mr-2"></i> Validar Comprovativos</h2>
+                <div id="dep-list" class="space-y-4"></div>
+            </section>
+            <section class="bg-slate-900/40 p-6 rounded-3xl border border-slate-800 shadow-xl border-l-4 border-l-green-600">
+                <h2 class="text-xs font-black text-green-500 uppercase mb-4 italic"><i class="fas fa-wallet mr-2"></i> Saques (Pagar c/ Taxa 10%)</h2>
+                <div id="wit-list" class="space-y-4"></div>
+            </section>
+        </div>
+    </main>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyC3SurEz7aLcHG4yBUq5zrGBPOb2mvLpZ4",
+            authDomain: "fir-6e9ec.firebaseapp.com",
+            projectId: "fir-6e9ec",
+            storageBucket: "fir-6e9ec.firebasestorage.app",
+            messagingSenderId: "579697818964",
+            appId: "1:579697818964:web:f2505fafa4d7a933431cc1"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        function painelPrincipal() {
+            const busca = document.getElementById('search-input').value;
+            db.collection("usuarios").onSnapshot(snap => {
+                const list = document.getElementById('user-list');
+                document.getElementById('total-stats').innerText = snap.size + " USUÁRIOS INSCRITOS";
+                list.innerHTML = '';
+                snap.forEach(doc => {
+                    const u = doc.data();
+                    if(busca && !u.telefone.includes(busca)) return;
+                    list.innerHTML += `
+                        <div class="bg-slate-900 p-5 rounded-3xl border ${u.banido ? 'border-red-900 opacity-60' : 'border-slate-800'} shadow-xl">
+                            <span class="text-[10px] font-black text-blue-500 uppercase italic">ID: ${u.telefone}</span>
+                            <h3 class="text-2xl font-black text-white mb-4">${u.saldo.toLocaleString()} <span class="text-xs text-slate-500 font-normal italic">KZ</span></h3>
+                            <div class="bg-black/60 p-3 rounded-2xl mb-4 text-[9px] font-mono border border-slate-800 text-slate-400">
+                                <p class="text-blue-400 mb-1 font-bold italic">IBAN: ${u.iban || 'NÃO CONFIGURADO'}</p>
+                                <p>TITULAR: ${u.nome_titular || '---'}</p>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button onclick="ajustarSaldoManual('${doc.id}', 'bonus')" class="bg-blue-600 py-2 rounded-xl text-[9px] font-black uppercase italic">Dar Bónus</button>
+                                <button onclick="ajustarSaldoManual('${doc.id}', 'add')" class="bg-slate-800 py-2 rounded-xl text-[9px] font-black uppercase">+ Saldo</button>
+                                <button onclick="banir('${doc.id}', ${u.banido})" class="col-span-2 ${u.banido ? 'bg-green-700' : 'bg-red-950 text-red-500'} py-2 rounded-xl text-[9px] font-black uppercase mt-1">
+                                    ${u.banido ? 'REATIVAR' : 'BANIR USUÁRIO'}
+                                </button>
+                            </div>
+                        </div>`;
+                });
+            });
+            db.collection("depositos").where("status", "==", "pendente").onSnapshot(snap => {
+                const depList = document.getElementById('dep-list');
+                depList.innerHTML = snap.empty ? '<p class="text-slate-700 text-[10px] italic">Sem depósitos...</p>' : '';
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    depList.innerHTML += `
+                        <div class="bg-black p-4 rounded-2xl border border-orange-500/10 shadow-lg">
+                            <p class="text-[9px] text-slate-500 font-bold mb-2 uppercase underline">Vem de ID: ${d.user_id}</p>
+                            <a href="${d.comprovativo_url}" target="_blank" class="block bg-orange-700 text-center py-2 rounded-lg text-[9px] font-black uppercase mb-3">Ver Comprovativo</a>
+                            <div class="flex gap-2">
+                                <button onclick="aprovarDep('${doc.id}', '${d.user_id}', ${d.valor})" class="flex-1 bg-white text-black py-2 rounded-lg text-[9px] font-black uppercase">Creditar ${d.valor} KZ</button>
+                                <button onclick="rejeitarAcao('${doc.id}', 'depositos')" class="bg-red-900 text-red-200 px-3 rounded-lg"><i class="fas fa-times"></i></button>
+                            </div>
+                        </div>`;
+                });
+            });
+            db.collection("saques").where("status", "==", "pendente").onSnapshot(snap => {
+                const witList = document.getElementById('wit-list');
+                witList.innerHTML = snap.empty ? '<p class="text-slate-700 text-[10px] italic">Sem saques...</p>' : '';
+                snap.forEach(doc => {
+                    const s = doc.data();
+                    const liquido = s.valor - (s.valor * 0.10);
+                    witList.innerHTML += `
+                        <div class="bg-black p-4 rounded-2xl border-l-4 border-green-600">
+                            <p class="text-[8px] text-slate-500 uppercase italic">ID: ${s.user_id}</p>
+                            <p class="text-xl font-black text-green-500">${liquido.toLocaleString()} KZ</p>
+                            <p class="text-[8px] text-orange-500 font-bold uppercase tracking-widest italic">Taxa de 10% descontada</p>
+                            <div class="bg-slate-900 p-3 rounded-xl my-4 text-[8px] font-mono border border-slate-800 shadow-inner">
+                                <p class="text-blue-400 font-bold mb-1 italic">IBAN: ${s.iban}</p>
+                                <p>TITULAR: ${s.nome_titular}</p>
+                                <p>BANCO: ${s.banco}</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="concluirSaque('${doc.id}', ${liquido})" class="flex-1 bg-green-600 py-2 rounded-lg text-[9px] font-black uppercase">Transferi Agora</button>
+                                <button onclick="rejeitarSaque('${doc.id}', '${s.user_id}', ${s.valor})" class="bg-red-900/50 text-red-500 px-4 rounded-lg text-[8px] font-black uppercase italic">Rejeitar</button>
+                            </div>
+                        </div>`;
+                });
+            });
+        }
+        function ajustarSaldoManual(id, tipo) { const val = prompt("Valor (KZ):"); if(val) db.collection("usuarios").doc(id).update({ saldo: firebase.firestore.FieldValue.increment(parseInt(val)) }); }
+        function banir(id, status) { if(confirm("Alterar status?")) db.collection("usuarios").doc(id).update({ banido: !status }); }
+        function aprovarDep(depId, userId, v) { db.collection("usuarios").doc(userId).update({ saldo: firebase.firestore.FieldValue.increment(v) }); db.collection("depositos").doc(depId).update({ status: "aprovado" }); }
+        function concluirSaque(id, val) { if(confirm("Confirma transferência de " + val + " KZ?")) db.collection("saques").doc(id).update({ status: "concluido" }); }
+        function rejeitarSaque(id, uId, v) { if(confirm("Rejeitar saque? Valor volta ao saldo.")) { db.collection("usuarios").doc(uId).update({ saldo: firebase.firestore.FieldValue.increment(v) }); db.collection("saques").doc(id).update({ status: "rejeitado" }); } }
+        function rejeitarAcao(id, col) { if(confirm("Invalidar comprovativo?")) db.collection(col).doc(id).update({ status: "rejeitado" }); }
+        window.onload = painelPrincipal;
+    </script>
+</body>
+</html>
