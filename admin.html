@@ -1,165 +1,439 @@
 <!DOCTYPE html>
-<html lang="pt-PT">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMA CENTRAL - ZAKWORK</title>
+    <title>Painel Administrativo - Car Share Premium</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=400;600;700;900&display=swap" rel="stylesheet">
     <style>
-        body { background: #020617; color: #f8fafc; font-family: sans-serif; }
-        .card { background: #1e293b; border: 1px solid #334155; border-radius: 1rem; }
-        .btn-action { transition: all 0.2s; text-transform: uppercase; font-weight: 900; font-size: 10px; border-radius: 8px; }
-        .btn-action:active { transform: scale(0.95); }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-<body class="p-4 pb-20">
+<body class="bg-neutral-950 text-white min-h-screen w-screen m-0 p-0 overflow-x-hidden">
 
-    <header class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4 border-b border-slate-800 pb-4">
-        <div>
-            <h1 class="text-2xl font-black text-blue-500 italic uppercase">Gestão Zakwork</h1>
-            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Painel de Controlo Total (2026)</p>
+    <div id="admin-auth" class="fixed inset-0 bg-black z-50 flex items-center justify-center p-4">
+        <div class="w-full max-w-sm bg-neutral-900 border border-white/10 rounded-2xl p-6 text-center space-y-4">
+            <h2 class="text-sm font-black tracking-widest text-amber-400 uppercase">Acesso Restrito Admin</h2>
+            <input type="password" id="admin-pass-input" placeholder="Introduza o código de acesso" class="w-full px-4 py-3 bg-black border border-white/10 rounded-xl text-xs text-white text-center focus:outline-none tracking-widest">
+            <button onclick="verificarAcessoAdmin()" class="w-full bg-amber-500 text-black py-3 rounded-xl font-bold text-xs uppercase tracking-wider">Autenticar Sistema</button>
         </div>
-        <div class="flex gap-2">
-            <button onclick="location.reload()" class="bg-slate-800 p-3 rounded-xl border border-slate-700 hover:bg-slate-700"><i class="fas fa-sync"></i></button>
-        </div>
-    </header>
-
-    <div class="grid lg:grid-cols-2 gap-6">
-        
-        <section class="card p-5">
-            <h2 class="text-blue-400 font-black mb-4 uppercase text-xs flex items-center gap-2">
-                <i class="fas fa-file-invoice-dollar"></i> Validação de Depósitos
-            </h2>
-            <div id="list-dep" class="space-y-4 max-h-[500px] overflow-y-auto pr-2 text-xs italic text-slate-500 text-center">A carregar...</div>
-        </section>
-
-        <section class="card p-5">
-            <h2 class="text-orange-400 font-black mb-4 uppercase text-xs flex items-center gap-2">
-                <i class="fas fa-wallet"></i> Solicitações de Saque
-            </h2>
-            <div id="list-wit" class="space-y-4 max-h-[500px] overflow-y-auto pr-2 text-xs italic text-slate-500 text-center">Aguardando...</div>
-        </section>
-
-        <section class="card p-5 lg:col-span-2 overflow-hidden">
-            <h2 class="text-purple-400 font-black mb-4 uppercase text-xs flex items-center gap-2">
-                <i class="fas fa-users-cog"></i> Gestão de Utilizadores & Recuperação
-            </h2>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-[11px] font-bold min-w-[800px]">
-                    <thead class="bg-slate-900/50 text-slate-500 uppercase">
-                        <tr>
-                            <th class="p-3">ID / Telefone</th>
-                            <th class="p-3">Senha Atual</th>
-                            <th class="p-3">Saldo (KZ)</th>
-                            <th class="p-3">Dados Bancários (IBAN)</th>
-                            <th class="p-3 text-center">Ações Rápidas</th>
-                        </tr>
-                    </thead>
-                    <tbody id="list-users" class="divide-y divide-slate-800"></tbody>
-                </table>
-            </div>
-        </section>
     </div>
 
-    <div id="m-img" class="fixed inset-0 bg-black/95 z-[100] hidden flex items-center justify-center p-4" onclick="this.classList.add('hidden')">
-        <img id="img-full" src="" class="max-w-full max-h-full shadow-2xl rounded-lg">
+    <div id="custom-alert" class="fixed top-5 inset-x-4 mx-auto max-w-sm z-50 bg-neutral-900 border border-amber-500/30 rounded-xl p-4 shadow-2xl hidden pointer-events-auto">
+        <div class="flex items-start space-x-3">
+            <div id="alert-icon" class="text-amber-400 text-sm">⚠️</div>
+            <div class="flex-1">
+                <h4 id="alert-title" class="text-xs font-black uppercase text-white tracking-wider">Notificação</h4>
+                <p id="alert-message" class="text-[10px] text-neutral-400 mt-0.5 leading-relaxed"></p>
+            </div>
+        </div>
+        <div class="mt-3 flex justify-end"><button onclick="fecharAlert()" class="bg-white/5 border border-white/10 px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-white/10">Fechar</button></div>
+    </div>
+
+    <div id="modal-comprovativo" class="fixed inset-0 bg-black/90 z-50 hidden flex flex-col items-center justify-center p-4">
+        <div class="max-w-md w-full flex justify-end mb-2">
+            <button onclick="fecharModalComprovativo()" class="bg-neutral-800 text-white px-3 py-1.5 rounded-xl font-bold text-xs uppercase tracking-wider">✕ Fechar Janela</button>
+        </div>
+        <img id="img-comprovativo-full" src="" class="max-w-md max-h-[80vh] object-contain rounded-xl border border-white/10">
+    </div>
+
+    <div id="admin-content" class="hidden p-4 max-w-md mx-auto space-y-5 pb-12">
+        
+        <div class="bg-neutral-900 border border-white/10 p-3.5 rounded-2xl space-y-2">
+            <label class="block text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Ficha do Utilizador (Editar Saldo/Senha)</label>
+            <div class="flex gap-2">
+                <input type="tel" id="search-phone" maxlength="9" placeholder="9xxxxxxxx" class="flex-1 px-3 py-2.5 bg-black border border-white/10 rounded-xl text-xs text-white tracking-widest font-mono focus:outline-none">
+                <button onclick="pesquisarUtilizador()" class="bg-white text-black px-4 rounded-xl font-bold text-xs uppercase">Abrir Ficha</button>
+            </div>
+        </div>
+
+        <div id="user-profile-modal" class="hidden bg-neutral-900 border-2 border-amber-500/40 p-4 rounded-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-white/10 pb-2">
+                <h3 class="text-xs font-black text-amber-400">FICHA DE CONTROLO DO UTILIZADOR</h3>
+                <button onclick="fecharFicha()" class="text-white bg-neutral-800 px-2 py-1 rounded text-[10px] font-bold">✕ FECHAR</button>
+            </div>
+            <div class="text-xs space-y-1 bg-black/50 p-3 rounded-xl border border-white/5 font-mono">
+                <p>📞 Contacto: <span id="view-phone" class="text-white font-bold"></span></p>
+                <p>📅 Data de Registo: <span id="view-cadastro" class="text-neutral-300 font-bold"></span></p>
+                <p>🔑 Senha Atual: <span id="view-senha" class="text-amber-300 font-bold tracking-wider"></span></p>
+                <p>💰 Saldo Atual: <span id="view-saldo" class="text-green-400 font-bold"></span> Kz</p>
+                <p>⭐ Inv. Ativo: <span id="view-investido" class="text-amber-400 font-bold"></span> Kz</p>
+                <p>✅ Convidados Ativos (Investiram): <span id="view-convidados-ativos" class="text-emerald-400 font-bold">0</span></p>
+                <p>❌ Convidados Inativos (Não Investiram): <span id="view-convidados-inativos" class="text-red-400 font-bold">0</span></p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+                <div class="space-y-1">
+                    <label class="block text-[8px] text-neutral-400 uppercase font-bold">Ajustar Saldo (Kz)</label>
+                    <input type="number" id="mod-saldo-val" placeholder="Valor" class="w-full px-2 py-1.5 bg-black border border-white/10 rounded-lg text-xs focus:outline-none">
+                    <div class="flex gap-1">
+                        <button onclick="modificarSaldoUser('add')" class="w-1/2 bg-green-700 text-white text-[9px] py-1 rounded font-bold uppercase">Injetar</button>
+                        <button onclick="modificarSaldoUser('sub')" class="w-1/2 bg-red-950 text-red-400 text-[9px] py-1 rounded font-bold uppercase border border-red-500/20">Retirar</button>
+                    </div>
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-[8px] text-neutral-400 uppercase font-bold">Alterar Senha de Acesso</label>
+                    <input type="text" id="mod-senha-val" placeholder="Nova Senha" class="w-full px-2 py-1.5 bg-black border border-white/10 rounded-lg text-xs focus:outline-none">
+                    <button onclick="alterarSenhaUser()" class="w-full bg-amber-600 text-black text-[9px] py-1 rounded font-bold uppercase">Mudar Senha</button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 border-t border-white/5 pt-2">
+                <div class="space-y-1 col-span-2">
+                    <label class="block text-[8px] text-neutral-400 uppercase font-bold">Atribuir Bónus de Rede</label>
+                    <div class="flex gap-2">
+                        <input type="number" id="mod-bonus-val" placeholder="Valor Kz" class="flex-1 px-2 py-1.5 bg-black border border-white/10 rounded-lg text-xs focus:outline-none">
+                        <button onclick="adicionarBonusUser()" class="bg-purple-700 text-white text-[9px] px-4 rounded font-bold uppercase">Dar Bónus</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 border-t border-white/5 pt-3">
+                <button id="btn-user-lock" onclick="toggleRestricaoUser('bloqueado')" class="w-full py-2 bg-neutral-800 text-[9px] font-bold uppercase rounded-xl border border-white/10"></button>
+                <button id="btn-user-saque" onclick="toggleRestricaoUser('saqueBloqueado')" class="w-full py-2 bg-neutral-800 text-[9px] font-bold uppercase rounded-xl border border-white/10"></button>
+                <button id="btn-user-coleta" onclick="toggleRestricaoUser('coletaBloqueada')" class="w-full py-2 bg-neutral-800 text-[9px] font-bold uppercase rounded-xl border border-white/10"></button>
+                <button onclick="eliminarContaUser()" class="w-full py-2 bg-red-600 text-black text-[9px] font-black uppercase rounded-xl">❌ Eliminar Conta</button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5 text-center">
+            <div class="bg-neutral-900 border border-white/5 p-3 rounded-xl">
+                <span class="text-neutral-500 block text-[8px] font-black uppercase tracking-wider">Inscritos na Plataforma</span>
+                <span id="stat-total-users" class="text-white text-lg font-bold font-mono">0</span>
+            </div>
+            <div class="bg-neutral-900 border border-white/5 p-3 rounded-xl">
+                <span class="text-neutral-500 block text-[8px] font-black uppercase tracking-wider">Investidores (>= 1.000 Kz)</span>
+                <span id="stat-ativos-users" class="text-green-400 text-lg font-bold font-mono">0</span>
+            </div>
+        </div>
+
+        <div class="bg-neutral-900 border border-white/5 p-4 rounded-2xl space-y-3">
+            <h3 class="text-[10px] font-black text-amber-400 uppercase tracking-widest border-b border-white/5 pb-1.5">Bloqueios Globais do Sistema</h3>
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-neutral-300">Travar Saques Globais</span>
+                <button id="btn-lock-saque" onclick="toggleLockGeral('lockSaqueGeral')" class="px-4 py-2 bg-neutral-800 border border-white/10 text-white rounded-xl text-[10px] font-bold uppercase transition"></button>
+            </div>
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-neutral-300">Travar Coletas Globais</span>
+                <button id="btn-lock-coleta" onclick="toggleLockGeral('lockColetaGeral')" class="px-4 py-2 bg-neutral-800 border border-white/10 text-white rounded-xl text-[10px] font-bold uppercase transition"></button>
+            </div>
+        </div>
+
+        <div class="bg-neutral-900 border border-white/10 p-4 rounded-2xl space-y-3">
+            <h3 class="text-[10px] font-black text-green-400 uppercase tracking-widest border-b border-white/5 pb-1.5">Aprovação de Depósitos Pendentes</h3>
+            <div id="admin-lista-depositos" class="space-y-2 max-h-56 overflow-y-auto no-scrollbar"></div>
+        </div>
+
+        <div class="bg-neutral-900 border border-white/10 p-4 rounded-2xl space-y-3">
+            <div class="flex flex-col gap-1.5 border-b border-white/5 pb-1.5">
+                <h3 class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Histórico de Depósitos Aprovados</h3>
+                <input type="text" id="search-hist-dep" oninput="carregarPainelAdmin()" placeholder="🔍 Localizar número neste histórico..." class="w-full px-2.5 py-1.5 bg-black border border-white/10 rounded-lg text-[10px] focus:outline-none font-mono placeholder-neutral-600">
+            </div>
+            <div id="admin-historico-depositos" class="space-y-2 max-h-56 overflow-y-auto no-scrollbar text-[10px]"></div>
+        </div>
+
+        <div class="bg-neutral-900 border border-white/10 p-4 rounded-2xl space-y-3">
+            <h3 class="text-[10px] font-black text-blue-400 uppercase tracking-widest border-b border-white/5 pb-1.5">Aprovações de Saques (Levantamentos)</h3>
+            <div id="admin-lista-saques" class="space-y-2 max-h-56 overflow-y-auto no-scrollbar"></div>
+        </div>
+
+        <div class="bg-neutral-900 border border-white/10 p-4 rounded-2xl space-y-3">
+            <h3 class="text-[10px] font-black text-pink-400 uppercase tracking-widest border-b border-white/5 pb-1.5">Rendas Partilhadas no Grupo</h3>
+            <div class="space-y-2 bg-black/40 p-2 rounded-xl border border-white/5">
+                <label class="block text-[8px] text-neutral-400 uppercase font-bold">Lançar Presença Manual (Contacto)</label>
+                <div class="flex gap-2">
+                    <input type="tel" id="input-partilha-phone" maxlength="9" placeholder="9xxxxxxxx" class="flex-1 px-2.5 py-1.5 bg-black border border-white/10 rounded-lg text-xs text-white focus:outline-none font-mono">
+                    <button onclick="lancarPartilhaManual()" class="bg-pink-600 text-white text-[9px] px-3 rounded font-bold uppercase">Registar</button>
+                </div>
+            </div>
+            <div class="pt-1">
+                <input type="text" id="search-partilhas" oninput="carregarPainelAdmin()" placeholder="🔍 Localizar número nesta lista de rendas..." class="w-full px-2.5 py-1.5 bg-black border border-white/10 rounded-lg text-[10px] focus:outline-none font-mono placeholder-neutral-600 mb-2">
+                <div id="admin-lista-partilhas" class="space-y-2 max-h-48 overflow-y-auto no-scrollbar text-[10px]"></div>
+            </div>
+        </div>
+
+        <div class="bg-neutral-900 border border-white/10 p-4 rounded-2xl space-y-4">
+            <div class="flex flex-col gap-1.5 border-b border-white/5 pb-1.5">
+                <h3 class="text-[10px] font-black text-amber-500 uppercase tracking-widest">Filtro de Contactos Cadastrados</h3>
+                <input type="text" id="search-contactos" oninput="carregarPainelAdmin()" placeholder="🔍 Localizar número em todo o cadastro..." class="w-full px-2.5 py-1.5 bg-black border border-white/10 rounded-lg text-[10px] focus:outline-none font-mono placeholder-neutral-600">
+            </div>
+            
+            <div class="space-y-1.5">
+                <span class="text-[9px] uppercase tracking-wider text-green-400 font-bold">👑 Investidores Ativos (>= 1.000 Kz)</span>
+                <div id="admin-lista-users-ativos" class="space-y-1.5 max-h-40 overflow-y-auto no-scrollbar text-[10px]"></div>
+            </div>
+
+            <div class="space-y-1.5 border-t border-white/5 pt-3">
+                <span class="text-[9px] uppercase tracking-wider text-neutral-400 font-bold">⚙️ Utilizadores Inativos (< 1.000 Kz)</span>
+                <div id="admin-lista-users-inativos" class="space-y-1.5 max-h-40 overflow-y-auto no-scrollbar text-[10px]"></div>
+            </div>
+        </div>
+
+        <div class="bg-neutral-900 border border-white/5 p-4 rounded-2xl space-y-3">
+            <h3 class="text-[10px] font-black text-purple-400 uppercase tracking-widest border-b border-white/5 pb-1.5">Histórico de Coletas Registadas (Hoje)</h3>
+            <div id="admin-lista-coletas" class="space-y-2 max-h-40 overflow-y-auto no-scrollbar text-[10px]"></div>
+        </div>
+
+        <div class="bg-neutral-900 border border-white/5 p-4 rounded-2xl space-y-3">
+            <h3 class="text-[10px] font-black text-emerald-400 uppercase tracking-widest border-b border-white/5 pb-1.5">Investimentos Efetuados (Apenas Hoje)</h3>
+            <div id="admin-lista-investimentos" class="space-y-2 max-h-40 overflow-y-auto no-scrollbar text-[10px]"></div>
+        </div>
+
     </div>
 
     <script>
-        const fb = { apiKey: "AIzaSyC3SurEz7aLcHG4yBUq5zrGBPOb2mvLpZ4", authDomain: "fir-6e9ec.firebaseapp.com", databaseURL: "https://fir-6e9ec-default-rtdb.firebaseio.com/", projectId: "fir-6e9ec", storageBucket: "fir-6e9ec.firebasestorage.app", messagingSenderId: "579697818964", appId: "1:579697818964:web:c05f427bd4460697431cc1" };
-        firebase.initializeApp(fb); const db = firebase.database();
+        const CODIGO_SECRETO = "ABS..943";
+        let targetUserPhone = null;
 
-        // --- 1. GESTÃO DE DEPÓSITOS ---
-        db.ref('depositos_pendentes').on('value', snap => {
-            const list = document.getElementById('list-dep'); list.innerHTML = '';
-            snap.forEach(s => {
-                const d = s.val(); if(d.status === 'Pendente') {
-                    list.innerHTML += `
-                    <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
-                        <div class="flex justify-between font-black text-white mb-2"><span>${d.user}</span><span>${d.valor} KZ</span></div>
-                        <img src="${d.comprovativo}" class="w-full h-24 object-cover rounded-lg mb-3 cursor-pointer border border-slate-600" onclick="vImg('${d.comprovativo}')">
-                        <div class="flex gap-1">
-                            <button onclick="admDep('${s.key}','${d.user}',${d.valor},'Aprovado')" class="flex-1 bg-green-600 p-2 btn-action">Aprovar</button>
-                            <button onclick="admDep('${s.key}','${d.user}',0,'Recusado')" class="flex-1 bg-red-600 p-2 btn-action">Rejeitar</button>
-                        </div>
-                    </div>`;
-                }
-            });
-            if(!list.innerHTML) list.innerHTML = "Sem depósitos pendentes.";
-        });
-
-        // --- 2. GESTÃO DE SAQUES ---
-        db.ref('saques_pendentes').on('value', snap => {
-            const list = document.getElementById('list-wit'); list.innerHTML = '';
-            snap.forEach(s => {
-                const d = s.val(); if(d.status === 'Pendente') {
-                    list.innerHTML += `
-                    <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
-                        <div class="flex justify-between font-black text-orange-400 mb-2"><span>${d.user}</span><span>${d.valor_liquido} KZ</span></div>
-                        <div class="bg-black/30 p-2 rounded text-[9px] font-mono text-slate-300 mb-3 border-l-2 border-orange-500">
-                            IBAN: ${d.iban || 'NÃO VINCULADO'}<br>TITULAR: ${d.titular || 'N/A'}
-                        </div>
-                        <div class="flex gap-1">
-                            <button onclick="admWit('${s.key}','Pago')" class="flex-1 bg-blue-600 p-2 btn-action">Confirmar Pago</button>
-                            <button onclick="admWit('${s.key}','Recusado','${d.user}',${d.valor_bruto})" class="flex-1 bg-red-600 p-2 btn-action">Rejeitar/Devolver</button>
-                        </div>
-                    </div>`;
-                }
-            });
-            if(!list.innerHTML) list.innerHTML = "Sem saques pendentes.";
-        });
-
-        // --- 3. GESTÃO DE USUÁRIOS (RECUPERAR SENHA, SALDO, BANIR) ---
-        db.ref('users').on('value', snap => {
-            const list = document.getElementById('list-users'); list.innerHTML = '';
-            snap.forEach(s => {
-                const u = s.val(); if(u.banido) return; // Ocultar banidos da lista principal
-                list.innerHTML += `
-                <tr class="hover:bg-white/5 transition-all">
-                    <td class="p-3 text-blue-400">${s.key}</td>
-                    <td class="p-3 text-yellow-500 font-mono">${u.pass || '----'}</td>
-                    <td class="p-3 text-green-500">${(u.saldo || 0).toLocaleString()} KZ</td>
-                    <td class="p-3 text-[9px] text-slate-400 font-mono">${u.iban || 'Sem IBAN'} <br> <span class="text-white">${u.nome_completo || ''}</span></td>
-                    <td class="p-3 space-x-1 flex justify-center">
-                        <button onclick="editSaldo('${s.key}',${u.saldo||0})" class="bg-slate-700 p-2 btn-action" title="Add/Reduzir Saldo"><i class="fas fa-coins"></i></button>
-                        <button onclick="editPass('${s.key}')" class="bg-blue-600 p-2 btn-action" title="Mudar Senha"><i class="fas fa-key"></i></button>
-                        <button onclick="banUser('${s.key}')" class="bg-red-600 p-2 btn-action" title="Banir"><i class="fas fa-user-slash"></i></button>
-                    </td>
-                </tr>`;
-            });
-        });
-
-        // --- FUNÇÕES DE AÇÃO ---
-        function admDep(id, u, v, st) { 
-            if(st === 'Aprovado') db.ref('users/'+u+'/saldo').transaction(s => (s||0)+v);
-            db.ref('depositos_pendentes/'+id).update({status: st}).then(() => alert("Depósito "+st));
+        function puxarDB() {
+            let data = localStorage.getItem('db_cars_share');
+            return data ? JSON.parse(data) : { users: {}, depositos: [], saques: [], lockSaqueGeral: false, lockColetaGeral: false, coletasHoje: [], investimentosHoje: [], depositosAprovados: [], partilhasGrupo: [], dataAtualFiltro: new Date().toDateString() };
         }
 
-        function admWit(id, st, u, v) {
-            if(st === 'Recusado') db.ref('users/'+u+'/saldo').transaction(s => (s||0)+v);
-            db.ref('saques_pendentes/'+id).update({status: st}).then(() => alert("Saque "+st));
+        function empurrarDB(banco) {
+            localStorage.setItem('db_cars_share', JSON.stringify(banco));
+            carregarPainelAdmin();
+            if(targetUserPhone) atualizarFichaVisual(banco.users[targetUserPhone]);
+        }
+        function mostrarAlert(titulo, mensagem, icone = '⚠️') {
+            document.getElementById('alert-title').textContent = titulo;
+            document.getElementById('alert-message').textContent = mensagem;
+            document.getElementById('alert-icon').textContent = icone;
+            document.getElementById('custom-alert').classList.remove('hidden');
         }
 
-        function editSaldo(u, s) { 
-            const n = prompt("SALDO ATUAL: "+s+" KZ\nInsira o NOVO SALDO TOTAL:", s);
-            if(n !== null) db.ref('users/'+u).update({saldo: parseFloat(n)});
-        }
+        function fecharAlert() { document.getElementById('custom-alert').classList.add('hidden'); }
+        function verComprovativo(imgSrc) { document.getElementById('img-comprovativo-full').src = imgSrc; document.getElementById('modal-comprovativo').classList.remove('hidden'); }
+        function fecharModalComprovativo() { document.getElementById('modal-comprovativo').classList.add('hidden'); document.getElementById('img-comprovativo-full').src = ""; }
 
-        function editPass(u) {
-            const p = prompt("Nova senha para o usuário "+u+":");
-            if(p) db.ref('users/'+u).update({pass: p}).then(() => alert("Senha alterada!"));
-        }
-
-        function banUser(u) {
-            if(confirm("Desejas BANIR permanentemente "+u+"?")) {
-                db.ref('users/'+u).update({banido: true, saldo: 0}).then(() => alert("Usuário Banido!"));
+        function verificarAcessoAdmin() {
+            const val = document.getElementById('admin-pass-input').value;
+            if(val === CODIGO_SECRETO) {
+                document.getElementById('admin-auth').classList.add('hidden');
+                document.getElementById('admin-content').classList.remove('hidden');
+                verificarViradaDeDia();
+                carregarPainelAdmin();
+            } else {
+                mostrarAlert("Acesso Recusado", "O código introduzido está incorreto.", "🔴");
             }
         }
 
-        function vImg(src) { document.getElementById('img-full').src = src; document.getElementById('m-img').classList.remove('hidden'); }
+        function verificarViradaDeDia() {
+            let db = puxarDB();
+            const hojeStr = new Date().toDateString();
+            if (db.dataAtualFiltro !== hojeStr) {
+                db.investimentosHoje = []; db.coletasHoje = []; db.dataAtualFiltro = hojeStr;
+                for (let ph in db.users) {
+                    db.users[ph].ganhoOntem = db.users[ph].ganhoHoje; db.users[ph].ganhoHoje = 0.00; db.users[ph].jaColetouHoje = false;
+                }
+                localStorage.setItem('db_cars_share', JSON.stringify(db));
+            }
+        }
+
+        function carregarPainelAdmin() {
+            let db = puxarDB();
+            if (!db.depositosAprovados) db.depositosAprovados = [];
+            if (!db.partilhasGrupo) db.partilhasGrupo = [];
+
+            const fHistDep = document.getElementById('search-hist-dep').value.trim();
+            const fPartilhas = document.getElementById('search-partilhas').value.trim();
+            const fContactos = document.getElementById('search-contactos').value.trim();
+
+            document.getElementById('stat-total-users').textContent = Object.keys(db.users).length;
+            document.getElementById('stat-ativos-users').textContent = Object.values(db.users).filter(u => u.investido >= 1000).length;
+
+            document.getElementById('btn-lock-saque').textContent = db.lockSaqueGeral ? "🔒 Bloqueado" : "🔓 Permitido";
+            document.getElementById('btn-lock-saque').className = db.lockSaqueGeral ? "px-4 py-2 bg-red-950/40 border border-red-500/30 text-red-400 rounded-xl text-[10px] font-bold uppercase transition" : "px-4 py-2 bg-green-950/40 border border-green-500/30 text-green-400 rounded-xl text-[10px] font-bold uppercase transition";
+            document.getElementById('btn-lock-coleta').textContent = db.lockColetaGeral ? "🔒 Bloqueado" : "🔓 Permitido";
+            document.getElementById('btn-lock-coleta').className = db.lockColetaGeral ? "px-4 py-2 bg-red-950/40 border border-red-500/30 text-red-400 rounded-xl text-[10px] font-bold uppercase transition" : "px-4 py-2 bg-green-950/40 border border-green-500/30 text-green-400 rounded-xl text-[10px] font-bold uppercase transition";
+
+            const boxDep = document.getElementById('admin-lista-depositos');
+            if(db.depositos.length === 0) { boxDep.innerHTML = "<div class='text-neutral-600 text-[10px] text-center py-2'>Sem depósitos pendentes</div>"; }
+            else {
+                boxDep.innerHTML = db.depositos.map(d => `
+                    <div class="bg-black p-3 rounded-xl border border-white/5 space-y-2">
+                        <div class="flex justify-between items-center text-[10px]"><span>📞 User: <b>${d.user}</b></span><span class="text-green-400 font-mono font-bold">+${d.valor.toFixed(2)} Kz</span></div>
+                        <div onclick="verComprovativo('${d.img}')" class="w-full max-h-36 overflow-hidden rounded-lg border border-white/10 cursor-pointer"><img src="${d.img}" class="w-full h-full object-contain bg-neutral-950"></div>
+                        <div class="flex gap-2 pt-1">
+                            <button onclick="processarDeposito(${d.id}, '${d.user}', ${d.valor}, true)" class="w-1/2 bg-green-600 text-black py-1 rounded-lg text-[9px] font-bold uppercase">Aprovar</button>
+                            <button onclick="processarDeposito(${d.id}, '${d.user}', ${d.valor}, false)" class="w-1/2 bg-neutral-800 text-red-400 py-1 rounded-lg text-[9px] font-bold uppercase">Rejeitar</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            const boxHistDep = document.getElementById('admin-historico-depositos');
+            let filtradosHistDep = db.depositosAprovados.filter(h => h.user.includes(fHistDep));
+            if(filtradosHistDep.length === 0) { boxHistDep.innerHTML = "<div class='text-neutral-600 text-center py-2'>Nenhum resultado encontrado.</div>"; }
+            else {
+                boxHistDep.innerHTML = filtradosHistDep.map(h => `
+                    <div class="p-2 bg-black rounded border border-emerald-500/10 flex justify-between items-center font-mono text-[9px]">
+                        <span>📞 <b>${h.user}</b></span><span class="text-neutral-500">${h.data}</span><span class="text-green-400 font-bold">+${h.valor.toFixed(2)} Kz</span>
+                    </div>
+                `).reverse().join('');
+            }
+
+            const boxSaq = document.getElementById('admin-lista-saques');
+            if(db.saques.length === 0) { boxSaq.innerHTML = "<div class='text-neutral-600 text-[10px] text-center py-2'>Sem solicitações de saque</div>"; }
+            else {
+                boxSaq.innerHTML = db.saques.map(s => `
+                    <div class="bg-black p-3 rounded-xl border border-white/5 space-y-1">
+                        <div class="flex justify-between items-center text-[10px]"><span>📞 User: <b>${s.user}</b></span><span class="text-blue-400 font-mono font-bold">-${s.valor.toFixed(2)} Kz</span></div>
+                        <div class="bg-neutral-950 p-2 rounded border border-white/5 text-[10px] font-mono text-amber-400">IBAN: ${s.iban}</div>
+                        <div class="flex gap-2 pt-1">
+                            <button onclick="processarSaque(${s.id}, '${s.user}', ${s.valor}, true)" class="w-1/2 bg-blue-600 text-white py-1 rounded-lg text-[9px] font-bold uppercase">Aprovar</button>
+                            <button onclick="processarSaque(${s.id}, '${s.user}', ${s.valor}, false)" class="w-1/2 bg-neutral-800 text-red-400 py-1 rounded-lg text-[9px] font-bold uppercase">Rejeitar</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            const boxPartilhas = document.getElementById('admin-lista-partilhas');
+            let filtradasPartilhas = db.partilhasGrupo.filter(p => p.user.includes(fPartilhas));
+            if(filtradasPartilhas.length === 0) { boxPartilhas.innerHTML = "<div class='text-neutral-600 text-center py-2'>Nenhum resultado encontrado.</div>"; }
+            else {
+                boxPartilhas.innerHTML = filtradasPartilhas.map((p, index) => `
+                    <div class="p-2 bg-black rounded border border-pink-500/10 flex justify-between items-center font-mono">
+                        <span>📢 <b>${p.user}</b></span><span class="text-neutral-500 text-[8px]">${p.data}</span>
+                        <button onclick="removerPartilhaManual(${index})" class="text-red-500 font-bold px-1.5 py-0.5 bg-white/5 rounded border border-white/5">✕</button>
+                    </div>
+                `).reverse().join('');
+            }
+
+            let listaUsersArray = Object.values(db.users).filter(u => u.phone.includes(fContactos));
+            const boxAtivos = document.getElementById('admin-lista-users-ativos');
+            const boxInativos = document.getElementById('admin-lista-users-inativos');
+
+            let ativosHTML = listaUsersArray.filter(u => u.investido >= 1000).map(u => `
+                <div class='p-2 bg-black rounded border border-green-500/10 flex justify-between items-center font-mono'>
+                    <span>📞 <b>${u.phone}</b></span><span class='text-green-400 font-bold'>Inv: ${u.investido.toFixed(0)} Kz</span><span class='text-amber-500'>Saldo: ${u.saldo.toFixed(0)} Kz</span>
+                </div>
+            `).join('');
+
+            let inativosHTML = listaUsersArray.filter(u => u.investido < 1000).map(u => `
+                <div class='p-2 bg-black rounded border border-white/5 flex justify-between items-center font-mono'>
+                    <span>📞 <b>${u.phone}</b></span><span class='text-neutral-500'>Inv: ${u.investido.toFixed(0)} Kz</span><span class='text-neutral-400'>Saldo: ${u.saldo.toFixed(0)} Kz</span>
+                </div>
+            `).join('');
+
+            boxAtivos.innerHTML = ativosHTML === "" ? "<div class='text-neutral-600 text-center py-1 font-sans'>Nenhum utilizador ativo encontrado</div>" : ativosHTML;
+            boxInativos.innerHTML = inativosHTML === "" ? "<div class='text-neutral-600 text-center py-1 font-sans'>Nenhum utilizador inativo encontrado</div>" : inativosHTML;
+
+            document.getElementById('admin-lista-coletas').innerHTML = db.coletasHoje.length === 0 ? "<div class='text-neutral-600 text-center py-1'>Nenhuma coleta registada hoje.</div>" : db.coletasHoje.map(c => `<div class='p-1.5 bg-black rounded border border-white/5 flex justify-between font-mono'><span>📞 ${c.phone}</span><span class='text-purple-400'>+${c.ganho.toFixed(2)} Kz</span></div>`).join('');
+            document.getElementById('admin-lista-investimentos').innerHTML = db.investimentosHoje.length === 0 ? "<div class='text-neutral-600 text-center py-1'>Nenhum investimento registado hoje.</div>" : db.investimentosHoje.map(i => `<div class='p-1.5 bg-black rounded border border-white/5 flex justify-between font-mono'><span>📞 ${i.phone}</span><span class='text-emerald-400'>${i.valor} Kz</span></div>`).join('');
+        }
+
+        function lancarPartilhaManual() {
+            const phone = document.getElementById('input-partilha-phone').value.trim();
+            if(phone.length < 9) { mostrarAlert("Erro", "Insira um número válido.", "🔴"); return; }
+            let db = puxarDB();
+            if(!db.users[phone]) { mostrarAlert("Inexistente", "O número +244 " + phone + " não está cadastrado.", "🔴"); return; }
+
+            let agora = new Date();
+            let dataFormatada = agora.getDate() + '/' + (agora.getMonth() + 1) + ' ' + agora.getHours().toString().padStart(2, '0') + ':' + agora.getMinutes().toString().padStart(2, '0');
+            db.partilhasGrupo.push({ user: phone, data: dataFormatada });
+            document.getElementById('input-partilha-phone').value = ""; empurrarDB(db);
+            mostrarAlert("Sucesso", "Presença registada para " + phone, "🟢");
+        }
+
+        function removerPartilhaManual(indexCorreto) {
+            let db = puxarDB();
+            let indexReal = db.partilhasGrupo.length - 1 - indexCorreto;
+            if(db.partilhasGrupo[indexReal]) { db.partilhasGrupo.splice(indexReal, 1); empurrarDB(db); }
+        }
+
+        function toggleLockGeral(chave) { let db = puxarDB(); db[chave] = !db[chave]; empurrarDB(db); }
+
+        function processarDeposito(id, phone, valor, statusAprovado) {
+            let db = puxarDB();
+            if(statusAprovado) { 
+                let agora = new Date();
+                let dataFormatada = agora.getDate() + '/' + (agora.getMonth() + 1) + ' ' + agora.getHours().toString().padStart(2, '0') + ':' + agora.getMinutes().toString().padStart(2, '0');
+                if(db.users[phone]) {
+                    db.users[phone].saldo += valor;
+                    if(!db.users[phone].historico) db.users[phone].historico = [];
+                    db.users[phone].historico.push(`[${dataFormatada}] Depósito Aprovado: +${valor.toFixed(2)} Kz`);
+                }
+                db.depositosAprovados.push({ user: phone, valor: valor, data: dataFormatada });
+            }
+            db.depositos = db.depositos.filter(d => d.id !== id); empurrarDB(db);
+        }
+
+        function processarSaque(id, phone, valor, statusAprovado) {
+            let db = puxarDB(); if(!statusAprovado && db.users[phone]) db.users[phone].saldo += valor;
+            db.saques = db.saques.filter(s => s.id !== id); empurrarDB(db);
+        }
+
+        function pesquisarUtilizador() {
+            const phone = document.getElementById('search-phone').value.trim();
+            let db = puxarDB();
+            if(!db.users[phone]) { mostrarAlert("Inexistente", "Nenhuma conta encontrada com este número.", "🔴"); return; }
+            targetUserPhone = phone; atualizarFichaVisual(db.users[phone]);
+            document.getElementById('user-profile-modal').classList.remove('hidden');
+        }
+
+        function atualizarFichaVisual(user) {
+            let db = puxarDB();
+            document.getElementById('view-phone').textContent = "+244 " + user.phone;
+            document.getElementById('view-cadastro').textContent = user.dataRegisto || "Não Registada";
+            document.getElementById('view-senha').textContent = user.password || "---";
+            document.getElementById('view-saldo').textContent = user.saldo.toFixed(2);
+            document.getElementById('view-investido').textContent = user.investido.toFixed(2);
+            
+            let convidadosDoUser = Object.values(db.users).filter(u => u.indicadoPor === user.phone || u.convidou === user.phone);
+            document.getElementById('view-convidados-ativos').textContent = convidadosDoUser.filter(u => u.investido >= 1000).length;
+            document.getElementById('view-convidados-inativos').textContent = convidadosDoUser.filter(u => u.investido < 1000).length;
+
+            const bLock = document.getElementById('btn-user-lock'), bSaq = document.getElementById('btn-user-saque'), bCol = document.getElementById('btn-user-coleta');
+            bLock.textContent = user.bloqueado ? "🔒 Conta Suspensa" : "🔓 Acesso Livre";
+            bLock.className = user.bloqueado ? "w-full py-2 bg-red-950/40 text-red-400 text-[9px] font-bold uppercase rounded-xl border border-red-500/20" : "w-full py-2 bg-neutral-800 text-white text-[9px] font-bold uppercase rounded-xl border border-white/10";
+            bSaq.textContent = user.saqueBloqueado ? "🔒 Saque Travado" : "🔓 Saque Ativo";
+            bSaq.className = user.saqueBloqueado ? "w-full py-2 bg-red-950/40 text-red-400 text-[9px] font-bold uppercase rounded-xl border border-red-500/20" : "w-full py-2 bg-neutral-800 text-white text-[9px] font-bold uppercase rounded-xl border border-white/10";
+            bCol.textContent = user.coletaBloqueada ? "🔒 Coleta Travada" : "🔓 Coleta Ativa";
+            bCol.className = user.coletaBloqueada ? "w-full py-2 bg-red-950/40 text-red-400 text-[9px] font-bold uppercase rounded-xl border border-red-500/20" : "w-full py-2 bg-neutral-800 text-white text-[9px] font-bold uppercase rounded-xl border border-white/10";
+        }
+
+        function modificarSaldoUser(operacao) {
+            const val = parseFloat(document.getElementById('mod-saldo-val').value);
+            if(isNaN(val) || val <= 0) return;
+            let db = puxarDB(); let agora = new Date();
+            let dataFormatada = agora.getDate() + '/' + (agora.getMonth() + 1) + ' ' + agora.getHours().toString().padStart(2, '0') + ':' + agora.getMinutes().toString().padStart(2, '0');
+            if(!db.users[targetUserPhone].historico) db.users[targetUserPhone].historico = [];
+
+            if(operacao === 'add') {
+                db.users[targetUserPhone].saldo += val;
+                db.users[targetUserPhone].historico.push(`[${dataFormatada}] [ADMIN] Crédito de Saldo: +${val.toFixed(2)} Kz`);
+            } else {
+                db.users[targetUserPhone].saldo = Math.max(0, db.users[targetUserPhone].saldo - val);
+                db.users[targetUserPhone].historico.push(`[${dataFormatada}] [ADMIN] Débito de Saldo: -${val.toFixed(2)} Kz`);
+            }
+            document.getElementById('mod-saldo-val').value = ""; empurrarDB(db);
+        }
+
+        function alterarSenhaUser() {
+            const novaSenha = document.getElementById('mod-senha-val').value.trim();
+            if(novaSenha === "") return;
+            let db = puxarDB(); db.users[targetUserPhone].password = novaSenha;
+            document.getElementById('mod-senha-val').value = ""; empurrarDB(db);
+        }
+
+        function adicionarBonusUser() {
+            const val = parseFloat(document.getElementById('mod-bonus-val').value);
+            if(isNaN(val) || val <= 0) return;
+            let db = puxarDB(); let agora = new Date();
+            let dataFormatada = agora.getDate() + '/' + (agora.getMonth() + 1) + ' ' + agora.getHours().toString().padStart(2, '0') + ':' + agora.getMinutes().toString().padStart(2, '0');
+            db.users[targetUserPhone].saldo += val; db.users[targetUserPhone].ganhoTotal += val;
+            if(!db.users[targetUserPhone].historico) db.users[targetUserPhone].historico = [];
+            db.users[targetUserPhone].historico.push(`[${dataFormatada}] [ADMIN] Bónus de Rede Extra: +${val.toFixed(2)} Kz`);
+            document.getElementById('mod-bonus-val').value = ""; empurrarDB(db);
+        }
+
+        function toggleRestricaoUser(campo) { let db = puxarDB(); db.users[targetUserPhone][campo] = !db.users[targetUserPhone][campo]; empurrarDB(db); }
+        function eliminarContaUser() { let db = puxarDB(); delete db.users[targetUserPhone]; document.getElementById('user-profile-modal').classList.add('hidden'); targetUserPhone = null; empurrarDB(db); }
+        function fecharFicha() { document.getElementById('user-profile-modal').classList.add('hidden'); targetUserPhone = null; }
     </script>
 </body>
 </html>
